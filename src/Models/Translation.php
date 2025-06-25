@@ -45,6 +45,7 @@ class Translation extends Model
 
         switch (DB::getDriverName()) {
             case 'mysql':
+            case 'mariadb':
                 $select = 'DISTINCT `group`';
                 break;
             default:

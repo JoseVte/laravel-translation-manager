@@ -102,8 +102,8 @@ class Controller extends BaseController
             ->with('numTranslations', $numTranslations)
             ->with('numChanged', $numChanged)
             ->with('editUrl', $group ? action('\Barryvdh\TranslationManager\Controller@postEdit', [$group]) : null)
-            ->with('paginationEnabled', $this->manager->getConfig('pagination_enabled'))
-            ->with('deleteEnabled', $this->manager->getConfig('delete_enabled'));
+            ->with('paginationEnabled', (bool) $this->manager->getConfig('pagination_enabled'))
+            ->with('deleteEnabled', (bool) $this->manager->getConfig('delete_enabled'));
     }
 
     /**
@@ -172,8 +172,8 @@ class Controller extends BaseController
             ->with('numModelTranslations', $numModelTranslations)
             ->with('numTranslations', $numTranslations)
             ->with('editUrl', action('\Barryvdh\TranslationManager\Controller@postEditModel', [$selectedModel]))
-            ->with('paginationEnabled', $this->manager->getConfig('pagination_enabled'))
-            ->with('deleteEnabled', $this->manager->getConfig('delete_enabled'));
+            ->with('paginationEnabled', (bool) $this->manager->getConfig('pagination_enabled'))
+            ->with('deleteEnabled', (bool) $this->manager->getConfig('delete_enabled'));
     }
 
     protected function loadLocales(): array
@@ -293,7 +293,7 @@ class Controller extends BaseController
 
     public function postAddGroup(Request $request): RedirectResponse
     {
-        $group = str_replace('.', '', $request->input('new-group'));
+        $group = $this->sanitizeFilename($request->input('new-group'));
         if ($group) {
             return redirect()->action('\Barryvdh\TranslationManager\Controller@getView', $group);
         }
@@ -307,7 +307,7 @@ class Controller extends BaseController
     public function postAddLocale(Request $request): RedirectResponse
     {
         $locales = $this->manager->getLocales();
-        $newLocale = str_replace([], '-', trim($request->input('new-locale')));
+        $newLocale = $this->sanitizeFilename($request->input('new-locale'));
         if (!$newLocale || in_array($newLocale, $locales, true)) {
             return redirect()->back();
         }
@@ -354,10 +354,19 @@ class Controller extends BaseController
                     ]
                 );
             }
-
-            return redirect()->back();
         }
 
         return redirect()->back();
+    }
+
+    protected function sanitizeFilename($input)
+    {
+        $input = Str::ascii(trim($input));
+        return str_replace(
+            ['<', '>', '%', '/', '\\', '.', ' ', '"', "'", '#', '?'],
+            '',
+            $input
+        );
+
     }
 }
